@@ -364,3 +364,8 @@ OkHttpClient httpClient = new OkHttpClient.Builder()
 
 Client client = Client.NewClientWithHTTPClient(config, httpClient);
 ```
+
+## 许可证
+
+MIT License
+
