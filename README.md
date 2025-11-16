@@ -212,6 +212,38 @@ Map<String, String> headers = client.Auth().GenerateAuthHeader("POST", "/api/ope
 // headers 可以直接用于 HTTP 请求
 ```
 
+#### 生成签名并获取 OpenAuth
+
+如果需要同时生成签名和获取 OpenAuth，可以使用 `GenerateSignatureWithOpenAuth` 方法：
+
+```java
+import com.junyouava.sdk.model.OpenIdToken;
+
+OpenIdToken openIdToken = new OpenIdToken("user-open-id");
+
+// 生成签名并获取 OpenAuth
+// path 参数是目标 API 的路径（用于生成签名），例如："/api/open/v1/register"
+SignatureWithOpenAuth result = client.Auth().GenerateSignatureWithOpenAuth(
+    "POST", 
+    "/api/open/v1/register", 
+    openIdToken
+);
+
+// 使用签名信息
+System.out.println("AccessId: " + result.getAccessId());
+System.out.println("Signature: " + result.getSignature());
+System.out.println("Nonce: " + result.getNonce());
+System.out.println("Timestamp: " + result.getTimestamp());
+
+// 使用 OpenAuth
+System.out.println("OpenAuth: " + result.getOpenAuth());
+```
+
+**注意**：
+- `path` 参数应该是您要调用的目标 API 路径（用于生成签名），而不是 AuthCMT 的路径
+- 此方法会调用 AuthCMT API 获取 OpenAuth，路径固定为 `/api/open/{version}/auth/cmt`
+- 签名是为目标 API 路径生成的，与 `GenerateSignature` 方法的行为相同
+
 ## API 参考
 
 详细的 API 文档请参考 [Junyou SDK](https://docs.junyouchain.com/)。
@@ -223,6 +255,8 @@ Map<String, String> headers = client.Auth().GenerateAuthHeader("POST", "/api/ope
 * **`AuthService`** - 认证服务，提供签名和认证 Header 生成
 * **`APIService`** - API 服务，提供所有业务 API 调用
 * **`Result<T>`** - 泛型响应结果类
+* **`Signature`** - 签名信息类
+* **`SignatureWithOpenAuth`** - 签名信息和 OpenAuth 的组合类
 
 ### 主要方法
 
@@ -235,6 +269,7 @@ Map<String, String> headers = client.Auth().GenerateAuthHeader("POST", "/api/ope
 * `client.API().ConfirmEWTReleaseByPartner(EWTBizNoInfo)` - 确认权证释放
 * `client.Auth().GenerateSignature(String, String)` - 生成签名
 * `client.Auth().GenerateAuthHeader(String, String)` - 生成认证 Header
+* `client.Auth().GenerateSignatureWithOpenAuth(String, String, OpenIdToken)` - 生成签名并获取 OpenAuth
 
 ## 配置
 
