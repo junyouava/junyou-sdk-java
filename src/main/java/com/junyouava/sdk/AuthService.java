@@ -1,7 +1,10 @@
 package com.junyouava.sdk;
 
+import com.junyouava.sdk.model.OpenIdToken;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -16,9 +19,17 @@ import java.util.UUID;
  */
 public class AuthService {
     private final Config config;
+    private APIService apiService;
 
     public AuthService(Config config) {
         this.config = config;
+    }
+
+    /**
+     * 设置 API 服务（由 Client 在构造完成后调用）
+     */
+    void setAPIService(APIService apiService) {
+        this.apiService = apiService;
     }
 
     /**
@@ -66,6 +77,44 @@ public class AuthService {
         headers.put(Constants.HEADER_TIMESTAMP, signature.getTimestamp());
 
         return headers;
+    }
+
+    /**
+     * 生成签名并调用 AuthCMT，合并返回签名信息和 OpenAuth
+     *
+     * @param method      HTTP 方法（GET, POST, PUT, DELETE 等）
+     * @param path        请求路径
+     * @param openIdToken OpenId Token（用于调用 AuthCMT）
+     * @return 签名信息和 OpenAuth 的组合
+     * @throws RuntimeException 如果生成签名或调用 AuthCMT 失败
+     * @throws IllegalStateException 如果 APIService 未初始化
+     */
+    public SignatureWithOpenAuth GenerateSignatureWithOpenAuth(String method, String path, OpenIdToken openIdToken) {
+        if (apiService == null) {
+            throw new IllegalStateException("APIService 未初始化，请确保通过 Client 创建 AuthService");
+        }
+        
+        try {
+            // 生成签名
+            Signature signature = GenerateSignature(method, path);
+
+            // 调用 AuthCMT
+            Result<String> result = apiService.AuthCMT(openIdToken);
+            if (!result.isSuccess()) {
+                throw new RuntimeException("调用 AuthCMT 失败: " + result.getMessage());
+            }
+
+            // 合并签名信息和数据
+            return new SignatureWithOpenAuth(
+                    signature.getAccessId(),
+                    signature.getSignature(),
+                    signature.getNonce(),
+                    signature.getTimestamp(),
+                    result.getData()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("调用 AuthCMT 失败: " + e.getMessage(), e);
+        }
     }
 
     /**

@@ -53,8 +53,11 @@ public class Client {
     private Client(Config config, OkHttpClient httpClient) {
         this.config = config;
         this.httpClient = httpClient;
+        // 创建 AuthService 和 APIService
         this.authService = new AuthService(config);
         this.apiService = new APIService(config, authService, httpClient);
+        // 设置 APIService 到 AuthService（用于 GenerateSignatureWithOpenAuth 方法）
+        this.authService.setAPIService(this.apiService);
     }
 
     /**
